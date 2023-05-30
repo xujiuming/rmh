@@ -1,29 +1,56 @@
-use clap::Parser;
-use human_panic::setup_panic;
+use std::ffi::OsString;
 
-/// Simple program to greet a person
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    pattern: String,
-    path: std::path::PathBuf,
+use clap::{arg, Command};
+
+fn cli() -> Command {
+    Command::new("rmh")
+        .about("ming")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .allow_external_subcommands(true)
+        .subcommand(
+            Command::new("add")
+                .about("Clones repos")
+                .arg(arg!(<HOST> "host name"))
+                .arg_required_else_help(true),
+        )
+
+        .subcommand(
+            Command::new("list")
+                .about("pushes things")
+                .arg_required_else_help(true),
+        )
+        .subcommand(
+            Command::new("del")
+                .about("adds things")
+                .arg_required_else_help(true),
+        )
 }
 
-fn main() {
-    //安装 human-panic
-    setup_panic!();
 
-    let args = Cli::parse();
-    let read_file_result = std::fs::read_to_string(&args.path);
-    let content = match read_file_result {
-        Ok(content) => { content }
-        Err(err) => {
-            panic!("not found file! {}", err);
+fn main() {
+    let matches = cli().get_matches();
+
+    match matches.subcommand() {
+        Some(("add", _sub_matches)) => {
+            println!("Adding");
         }
-    };
-    for line in content.lines() {
-        if line.contains(&args.pattern) {
-            println!("{}", line);
+        Some(("list", _sub_matches)) => {
+            println!("list");
         }
+        Some(("del", _sub_matches)) => {
+            println!("del");
+        }
+        Some((ext, sub_matches)) => {
+            let args = sub_matches
+                .get_many::<OsString>("")
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
+            println!("Calling out to {ext:?} with {args:?}");
+        }
+        _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     }
+
+    // Continued program logic goes here...
 }
